@@ -10,6 +10,7 @@ Android app that fully blocks the phone for one Pomodoro session (focus + break)
 
 **Idle**
 - Two sliders: Focus 1-60 min (default 25), Break 1-30 min (default 5)
+- The slider has a small dot indicator every 5 minutes
 - Last-used values persisted (DataStore)
 - "Start" button
 - If a required permission is missing, sliders/Start are replaced by a "Grant Permissions" button that walks through system settings screens one at a time
