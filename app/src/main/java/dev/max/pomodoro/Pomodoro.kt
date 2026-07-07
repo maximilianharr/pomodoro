@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -37,6 +38,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -199,6 +202,39 @@ fun RunningScreen() {
     )
 }
 
+/** 1..max minute slider with a dot every 5 minutes, styled like the track-end stop dot. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MinuteSlider(value: Int, max: Int, onChange: (Int) -> Unit) {
+    val colors = SliderDefaults.colors(
+        thumbColor = Bright, activeTrackColor = Bright,
+        inactiveTrackColor = Bright.copy(alpha = 0.3f),
+    )
+    Slider(
+        value = value.toFloat(), onValueChange = { onChange(it.toInt()) },
+        valueRange = 1f..max.toFloat(), colors = colors, modifier = Modifier.fillMaxWidth(),
+        track = { state ->
+            SliderDefaults.Track(
+                sliderState = state, colors = colors,
+                modifier = Modifier.drawWithContent {
+                    drawContent()
+                    // ponytail: dots at linear track fractions; close enough to M3's own tick layout
+                    val span = max - 1f
+                    val fill = (state.value - 1f) / span
+                    for (m in 5 until max step 5) {
+                        val frac = (m - 1f) / span
+                        drawCircle(
+                            color = if (frac <= fill) Dark else Bright,
+                            radius = 2.dp.toPx(),
+                            center = Offset(frac * size.width, size.height / 2f),
+                        )
+                    }
+                },
+            )
+        },
+    )
+}
+
 @Composable
 fun IdleScreen(permsOk: Boolean, initialFocus: Int, initialBreak: Int, onGrant: () -> Unit) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
@@ -217,21 +253,11 @@ fun IdleScreen(permsOk: Boolean, initialFocus: Int, initialBreak: Int, onGrant: 
 
     var focus by remember { mutableIntStateOf(initialFocus) }
     var brk by remember { mutableIntStateOf(initialBreak) }
-    val sliderColors = SliderDefaults.colors(
-        thumbColor = Bright, activeTrackColor = Bright,
-        inactiveTrackColor = Bright.copy(alpha = 0.3f),
-    )
 
     Text("Focus  $focus min", color = Bright, fontSize = 20.sp)
-    Slider(
-        value = focus.toFloat(), onValueChange = { focus = it.toInt() },
-        valueRange = 1f..60f, colors = sliderColors, modifier = Modifier.fillMaxWidth(),
-    )
+    MinuteSlider(value = focus, max = 60, onChange = { focus = it })
     Text("Break  $brk min", color = Bright, fontSize = 20.sp, modifier = Modifier.padding(top = 24.dp))
-    Slider(
-        value = brk.toFloat(), onValueChange = { brk = it.toInt() },
-        valueRange = 1f..30f, colors = sliderColors, modifier = Modifier.fillMaxWidth(),
-    )
+    MinuteSlider(value = brk, max = 30, onChange = { brk = it })
     Button(
         onClick = {
             MainScope().launch {
