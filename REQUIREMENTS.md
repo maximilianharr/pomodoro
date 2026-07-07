@@ -2,6 +2,10 @@
 
 Android app that fully blocks the phone for one Pomodoro session (focus + break).
 
+## Design
+- lean and simple
+- two colors, dark and bright gray
+
 ## Screen (single screen, two states)
 
 **Idle**

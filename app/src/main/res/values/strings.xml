@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pomodoro</string>
+    <string name="accessibility_description">Keeps Pomodoro in the foreground during a running session so the phone stays blocked.</string>
+    <string name="admin_explanation">Prevents uninstalling Pomodoro and lets it re-lock the screen if blocking is tampered with.</string>
+</resources>
