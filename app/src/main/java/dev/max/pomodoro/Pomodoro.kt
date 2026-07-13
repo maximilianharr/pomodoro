@@ -7,6 +7,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -68,6 +69,7 @@ enum class Phase { IDLE, FOCUS, BREAK }
 object Session {
     var phase by mutableStateOf(Phase.IDLE)
     var secondsLeft by mutableIntStateOf(0)
+    var paused by mutableStateOf(false)
     private var job: Job? = null
 
     fun start(ctx: Context, focusMin: Int, breakMin: Int) {
@@ -85,8 +87,23 @@ object Session {
     }
 
     private suspend fun countdown(app: Context, totalSeconds: Int) {
-        val end = SystemClock.elapsedRealtime() + totalSeconds * 1000L
+        var end = SystemClock.elapsedRealtime() + totalSeconds * 1000L
         while (true) {
+            // Phone call: freeze the remaining time until the call is over.
+            if (inCall(app)) {
+                paused = true
+                val leftMs = end - SystemClock.elapsedRealtime()
+                delay(500)
+                end = SystemClock.elapsedRealtime() + leftMs
+                continue
+            }
+            if (paused) { // call just ended -> reclaim the foreground
+                paused = false
+                app.startActivity(
+                    Intent(app, MainActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                )
+            }
             val left = ((end - SystemClock.elapsedRealtime() + 999) / 1000).toInt()
             if (left <= 0) break
             secondsLeft = left
@@ -98,8 +115,16 @@ object Session {
             delay(500)
         }
         secondsLeft = 0
+        paused = false
     }
 }
+
+// ponytail: audio mode instead of TelephonyManager — no READ_PHONE_STATE permission needed,
+// also catches VoIP calls (MODE_IN_COMMUNICATION).
+fun inCall(ctx: Context): Boolean =
+    ctx.getSystemService(AudioManager::class.java).mode in intArrayOf(
+        AudioManager.MODE_RINGTONE, AudioManager.MODE_IN_CALL, AudioManager.MODE_IN_COMMUNICATION,
+    )
 
 fun accessibilityEnabled(ctx: Context): Boolean =
     Settings.Secure.getString(ctx.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
@@ -122,6 +147,7 @@ class AdminReceiver : DeviceAdminReceiver()
 class BlockerService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (Session.phase == Phase.IDLE) return
+        if (inCall(this)) return // let the phone app own the screen during a call
         val pkg = event.packageName?.toString() ?: return
         if (pkg != packageName) {
             startActivity(
@@ -193,7 +219,11 @@ fun App(permsOk: Boolean, initialFocus: Int, initialBreak: Int, onGrant: () -> U
 @Composable
 fun RunningScreen() {
     Text(
-        text = if (Session.phase == Phase.FOCUS) "Focus" else "Break",
+        text = when {
+            Session.paused -> "Paused"
+            Session.phase == Phase.FOCUS -> "Focus"
+            else -> "Break"
+        },
         color = Bright, fontSize = 28.sp,
     )
     Text(
