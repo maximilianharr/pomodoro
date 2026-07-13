@@ -28,6 +28,7 @@ Android app that fully blocks the phone for one Pomodoro session (focus + break)
 - Home/Recents also bounce back into this app (launcher counts as "not this app")
 - No in-app way to cancel a running session
 - If the app process is killed or the phone reboots mid-session, the session just ends (no resume)
+- If there is a phone call incoming, the app is put to background and the timer is paused untill the phonecall is finished.
 
 ## Enforcement architecture
 
