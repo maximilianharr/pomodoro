@@ -26,6 +26,12 @@ key — swap in a real keystore before distributing).
 
 ## Install
 
+Enable 'USB debugging' on phone:
+1. Settings > About phone > Tap 'build number' 7 times to enable become 'developer'
+2. Settings > System > Developer Options > Enable 'USB Debugging'
+
+Install app:
+
 ```sh
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
