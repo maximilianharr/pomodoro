@@ -24,17 +24,33 @@ Requires JDK 17+ and the Android SDK (`local.properties` → `sdk.dir`).
 APK: `app/build/outputs/apk/release/app-release.apk` (signed with the debug
 key — swap in a real keystore before distributing).
 
-## Install
+## Install from release (no computer)
+
+1. On the phone, download the `.apk` from the [latest release](../../releases/latest).
+2. Tap the downloaded file. When prompted, allow **Install unknown apps** for the app you downloaded with (e.g. Chrome or Files), go back and tap the file again.
+3. Confirm the install (Play Protect may warn about an unrecognized developer → *Install anyway*).
+
+Upgrading from an APK built on a different machine fails with "App not
+installed" (different signing key) — uninstall the old version first (see
+[Uninstall](#uninstall)).
+
+## Install from source
+
+Requires [Build](#build) above plus `adb` (Android SDK platform-tools) on the
+computer.
 
 Enable 'USB debugging' on phone:
-1. Settings > About phone > Tap 'build number' 7 times to enable become 'developer'
+1. Settings > About phone > Tap 'build number' 7 times to become 'developer'
 2. Settings > System > Developer Options > Enable 'USB Debugging'
 
-Install app:
+Connect the phone via USB (accept the "Allow USB debugging?" prompt), then:
 
 ```sh
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
+
+The "different signing key" caveat above applies here too: replacing a
+version built elsewhere requires uninstalling it first.
 
 On first launch tap **Grant permissions** — it walks you through enabling the
 accessibility service and device admin in system settings. Both are required
